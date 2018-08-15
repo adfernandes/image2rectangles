@@ -16,7 +16,6 @@ import (
 	"strings"
 )
 
-const threshold uint8 = 127 // gray theshold
 const style string = "fill: rgb(255,255,255); stroke: rgb(0,0,0); stroke-width: 0.03125;"
 
 func getReaderFor(filename string) io.Reader {
@@ -80,7 +79,7 @@ func newQuad(gray *image.Gray, rect *image.Rectangle) *quad {
 
 		for y := rect.Min.Y; y < rect.Max.Y; y++ {
 			for x := rect.Min.X; x < rect.Max.X; x++ {
-				if gray.GrayAt(x, y).Y > threshold {
+				if gray.GrayAt(x, y).Y > 0 {
 					q.count[i].observed++
 				}
 			}
@@ -134,11 +133,13 @@ func main() {
 
 	var inputFilename string
 	var outputFilename string
+	var threshold uint
 	var negate bool
 
 	flag.StringVar(&inputFilename, "i", "-", "input filename, '-' for 'stdin'")
 	flag.StringVar(&outputFilename, "o", "-", "output filename, '-' for 'stdout'")
-	flag.BoolVar(&negate, "n", false, "negate (invert) the image colors")
+	flag.UintVar(&threshold, "t", 127, "monochrome threshold, post negation")
+	flag.BoolVar(&negate, "n", false, "negate the image colors prior to grayscaling")
 
 	flag.Parse()
 
@@ -153,6 +154,10 @@ func main() {
 
 	if input.Bounds().Dx() < 2 || input.Bounds().Dy() < 2 {
 		log.Fatal("the input image must be greater than 2 pixels wide and high")
+	}
+
+	if threshold < 0 || threshold > 255 {
+		log.Fatal("the monochrome threshold myst be [0, 255] inclusive")
 	}
 
 	// convert the input image to the RGBA (premultiplied alpha) color space
@@ -189,14 +194,31 @@ func main() {
 		}
 	}
 
+	// now convert to monochrome
+
+	black := color.Gray{0}
+	white := color.Gray{255}
+	mono := image.NewGray(gray.Bounds())
+
+	for y := gray.Bounds().Min.Y; y < gray.Bounds().Max.Y; y++ {
+		for x := gray.Bounds().Min.X; x < gray.Bounds().Max.X; x++ {
+			if uint(gray.GrayAt(x, y).Y) > threshold {
+				mono.SetGray(x, y, white)
+			} else {
+				mono.SetGray(x, y, black)
+			}
+		}
+	}
+
 	// save the covnerted image
 
 	// TODO png.Encode(getWriterFor(outputFilename), gray)
+	// TODO png.Encode(getWriterFor(outputFilename), mono)
 
 	// write the debugging svg file
 
-	rect := gray.Bounds()
-	q := newQuad(gray, &rect)
+	rect := mono.Bounds()
+	q := newQuad(mono, &rect)
 
 	svg := q.toSVG(&rect)
 	writer := getWriterFor(outputFilename)
