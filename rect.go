@@ -9,7 +9,7 @@ import (
 	"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
-	_ "image/png"
+	"image/png"
 	"io"
 	"log"
 	"os"
@@ -156,6 +156,10 @@ func main() {
 		log.Fatal("the input image must be greater than 2 pixels wide and high")
 	}
 
+	if input.Bounds().Min.X != 0 || input.Bounds().Min.Y != 0 {
+		log.Fatal("internal error: the image 'Min' bound must be (0,0) but it isn't")
+	}
+
 	if threshold < 0 || threshold > 255 {
 		log.Fatal("the monochrome threshold myst be [0, 255] inclusive")
 	}
@@ -223,5 +227,135 @@ func main() {
 	svg := q.toSVG(&rect)
 	writer := getWriterFor(outputFilename)
 	writer.Write([]byte(svg))
+
+	// FIXME test the maximal area thingie
+
+	for count := 0; ; count++ {
+
+		png.Encode(getWriterFor(fmt.Sprintf("_zzz/%s~%03d.png", outputFilename, count)), mono)
+
+		area, rect := maximalRectangle(mono)
+
+		fmt.Printf("count: %v, area: %v, rect: %v\n", count, area, rect)
+
+		for y := rect.Bounds().Min.Y; y < rect.Bounds().Max.Y; y++ {
+			for x := rect.Bounds().Min.X; x < rect.Bounds().Max.X; x++ {
+				mono.SetGray(x, y, black)
+			}
+		}
+
+		if area <= 0 {
+			break
+		}
+
+	}
+
+}
+
+// https://stackoverflow.com/a/20039017
+//
+// We assume that we have already checked that the input
+// rectangle has a minimum x and y bound value of zero.
+//
+func maximalRectangle(img *image.Gray) (int, image.Rectangle) {
+
+	M := img.Bounds().Max.X // length of a row
+	N := img.Bounds().Max.Y // number of rows
+
+	type Pair struct {
+		one int
+		two int
+	}
+
+	bestLl := Pair{0, 0}
+	bestUr := Pair{-1, -1}
+	var bestArea int
+
+	c := make([]int, M+1)  // cache
+	s := make([]Pair, M+1) // stack
+	var top int            // top of stack
+	var row int            // cache row
+
+	// main algorithm
+
+	for n := 0; n != N; n++ {
+
+		var openWidth int
+
+		// update cache
+
+		for m := 0; m != M; m++ {
+			b := img.GrayAt(row, m).Y
+			if b == 0 {
+				c[m] = 0
+			} else {
+				c[m]++
+			}
+		}
+		row++
+
+		for m := 0; m != M+1; m++ {
+
+			if c[m] > openWidth { // open a new rectangle?
+
+				// push(m, openWidth)
+				s[top].one = m
+				s[top].two = openWidth
+				top++
+
+				openWidth = c[m]
+
+			} else if c[m] < openWidth { // close rectangle(s)?
+
+				var m0, w0, area int
+
+				for {
+
+					// pop(&m0, &w0)
+					top--
+					m0 = s[top].one
+					w0 = s[top].two
+
+					area = openWidth * (m - m0)
+
+					if area > bestArea {
+						bestArea = area
+						bestLl.one = m0
+						bestLl.two = n
+						bestUr.one = m - 1
+						bestUr.two = n - openWidth + 1
+					}
+
+					openWidth = w0
+
+					if c[m] >= openWidth {
+						break
+					}
+
+				}
+
+				openWidth = c[m]
+
+				if openWidth != 0 {
+
+					// push(m0, w0)
+					s[top].one = m0
+					s[top].two = w0
+					top++
+
+				}
+
+			}
+
+		}
+
+	}
+
+	if bestArea > 0 {
+		fmt.Printf("image.Rect(%v, %v, %v, %v) -> ", bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
+		return bestArea, image.Rect(bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
+	}
+
+	return 0, image.Rect(0, 0, 0, 0)
 
 }
