@@ -12,7 +12,6 @@ import (
 	"image/gif"
 	_ "image/jpeg"
 	"image/png"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -20,7 +19,7 @@ import (
 
 const style string = "fill: rgb(255,255,255); stroke: rgb(0,0,0); stroke-width: 0.03125;"
 
-func getDefaultReaderFor(filename string) io.Reader {
+func getDefaultReaderFor(filename string) *os.File {
 
 	if filename == "-" || filename == "" {
 		return os.Stdin
@@ -35,7 +34,7 @@ func getDefaultReaderFor(filename string) io.Reader {
 
 }
 
-func getDefaultWriterFor(filename string) io.Writer {
+func getDefaultWriterFor(filename string) *os.File {
 
 	if filename == "-" || filename == "" {
 		return os.Stdout
@@ -50,7 +49,7 @@ func getDefaultWriterFor(filename string) io.Writer {
 
 }
 
-func getWriterFor(filename string) io.Writer {
+func getWriterFor(filename string) *os.File {
 
 	writer, err := os.Create(filename)
 	if err != nil {
@@ -199,6 +198,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	inputReader.Close()
 
 	// we will assume that 'white' is the color that we want drawn
 
@@ -229,6 +229,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		writer.Close()
 	}
 
 	// negate the image colors, if requested, respecting the alpha channel
@@ -251,6 +252,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		writer.Close()
 	}
 
 	// convert the image to grayscale, removing the alpha channel
@@ -269,6 +271,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		writer.Close()
 	}
 
 	// now convert to monochrome
@@ -293,6 +296,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		writer.Close()
 	}
 
 	// FIXME write the debugging svg file
@@ -302,7 +306,11 @@ func main() {
 
 	svg := q.toSVG(&rect)
 	writer := getWriterFor(svgFilename)
-	writer.Write([]byte(svg))
+	_, err = writer.Write([]byte(svg))
+	if err != nil {
+		log.Fatal(err)
+	}
+	writer.Close()
 
 	// FIXME test the maximal area thingie AND SANVE THE SVG FILE
 
@@ -350,6 +358,8 @@ func main() {
 		}
 
 	}
+
+	// *** START HERE create the animated GIF and write (and close) it
 
 }
 
@@ -453,7 +463,7 @@ func maximalRectangle(img *image.Gray) (int, image.Rectangle) {
 	}
 
 	if bestArea > 0 {
-		fmt.Printf("image.Rect(%v, %v, %v, %v) -> ", bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
+		fmt.Printf("image.Rect(%v, %v, %v, %v)\n", bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
 		return bestArea, image.Rect(bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
 	}
 
