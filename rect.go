@@ -175,7 +175,7 @@ func main() {
 
 	flag.StringVar(&monoFilename, "monochrome", "", "write the corresponding monochrome PNG file")
 	flag.StringVar(&animatedFilename, "animated", "", "write the corresponding animated GIF file")
-	flag.IntVar(&animationDelay, "delay", 10, "delay between animation frames, in 1/100 s")
+	flag.IntVar(&animationDelay, "frame-delay", 10, "delay between animation frames, in 1/100 s")
 
 	flag.StringVar(&svgFilename, "svg", "", "write the corresponding SVG file")
 
