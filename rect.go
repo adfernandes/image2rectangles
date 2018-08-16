@@ -3,11 +3,13 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"image"
 	"image/color"
-	_ "image/gif"
+	"image/gif"
 	_ "image/jpeg"
 	"image/png"
 	"io"
@@ -18,7 +20,7 @@ import (
 
 const style string = "fill: rgb(255,255,255); stroke: rgb(0,0,0); stroke-width: 0.03125;"
 
-func getReaderFor(filename string) io.Reader {
+func getDefaultReaderFor(filename string) io.Reader {
 
 	if filename == "-" || filename == "" {
 		return os.Stdin
@@ -33,11 +35,22 @@ func getReaderFor(filename string) io.Reader {
 
 }
 
-func getWriterFor(filename string) io.Writer {
+func getDefaultWriterFor(filename string) io.Writer {
 
 	if filename == "-" || filename == "" {
 		return os.Stdout
 	}
+
+	writer, err := os.Create(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return writer
+
+}
+
+func getWriterFor(filename string) io.Writer {
 
 	writer, err := os.Create(filename)
 	if err != nil {
@@ -131,54 +144,98 @@ func (q *quad) toSVG(rect *image.Rectangle) string {
 
 func main() {
 
+	log.SetFlags(log.Llongfile)
+
 	var inputFilename string
 	var outputFilename string
-	var threshold uint
-	var negate bool
 
-	flag.StringVar(&inputFilename, "i", "-", "input filename, '-' for 'stdin'")
-	flag.StringVar(&outputFilename, "o", "-", "output filename, '-' for 'stdout'")
-	flag.UintVar(&threshold, "t", 127, "monochrome threshold, post negation")
-	flag.BoolVar(&negate, "n", false, "negate the image colors prior to grayscaling")
+	var colorFilename string
+
+	var invert bool
+	var negativeFilename string
+
+	var grayThreshold uint
+	var grayFilename string
+
+	var monoFilename string
+	var animatedFilename string
+	var animationDelay int
+
+	var svgFilename string
+
+	flag.StringVar(&inputFilename, "input", "", "the input PNG, GIF, or JPEG file, default is stdin")
+	flag.StringVar(&outputFilename, "output", "", "the output rectangle-data filename, default is stdout")
+
+	flag.StringVar(&colorFilename, "verify", "", "write a verification RGBA color PNG file")
+
+	flag.BoolVar(&invert, "invert", false, "invert the image colors prior to grayscaling")
+	flag.StringVar(&negativeFilename, "negative", "", "write the corresponding negative RGBA PNG file")
+
+	flag.UintVar(&grayThreshold, "threshold", 127, "monochrome gray threshold, post negation, 0-255")
+	flag.StringVar(&grayFilename, "grayscale", "", "write the corresponding grayscale PNG file")
+
+	flag.StringVar(&monoFilename, "monochrome", "", "write the corresponding monochrome PNG file")
+	flag.StringVar(&animatedFilename, "animated", "", "write the corresponding animated GIF file")
+	flag.IntVar(&animationDelay, "delay", 10, "delay between animation frames, in 1/100 s")
+
+	flag.StringVar(&svgFilename, "svg", "", "write the corresponding SVG file")
 
 	flag.Parse()
 
-	input, format, err := image.Decode(getReaderFor(inputFilename))
+	if !invert && negativeFilename != "" {
+		log.Fatal("a negative image was requested, but color inversion was not")
+	}
+
+	if grayThreshold < 0 || grayThreshold > 255 {
+		log.Fatal("the monochrome threshold myst be in [0, 255] inclusive")
+	}
+
+	if animationDelay < 1 {
+		log.Fatal("the animation delay must be positive")
+	}
+
+	inputReader := getDefaultReaderFor(inputFilename)
+	input, format, err := image.Decode(inputReader)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// we will assume that 'white' is the color that we want drawn
 
-	fmt.Printf("read '%v' as a '%v' image with '%T' and bounds '%v'\n", inputFilename, format, input.ColorModel().Convert(color.RGBA{}), input.Bounds())
+	bounds := input.Bounds()
+	fmt.Printf("read '%v' as a '%v' image with '%T' and bounds '%v'\n", inputFilename, format, input.ColorModel().Convert(color.RGBA{}), bounds)
 
-	if input.Bounds().Dx() < 2 || input.Bounds().Dy() < 2 {
+	if bounds.Dx() < 2 || bounds.Dy() < 2 {
 		log.Fatal("the input image must be greater than 2 pixels wide and high")
 	}
 
-	if input.Bounds().Min.X != 0 || input.Bounds().Min.Y != 0 {
+	if bounds.Min.X != 0 || bounds.Min.Y != 0 {
 		log.Fatal("internal error: the image 'Min' bound must be (0,0) but it isn't")
-	}
-
-	if threshold < 0 || threshold > 255 {
-		log.Fatal("the monochrome threshold myst be [0, 255] inclusive")
 	}
 
 	// convert the input image to the RGBA (premultiplied alpha) color space
 
-	rgba := image.NewRGBA(input.Bounds())
+	rgba := image.NewRGBA(bounds)
 
-	for y := input.Bounds().Min.Y; y < input.Bounds().Max.Y; y++ {
-		for x := input.Bounds().Min.X; x < input.Bounds().Max.X; x++ {
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			rgba.Set(x, y, input.At(x, y))
+		}
+	}
+
+	if colorFilename != "" {
+		writer := getWriterFor(colorFilename)
+		err = png.Encode(writer, rgba)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	// negate the image colors, if requested, respecting the alpha channel
 
-	if negate {
-		for y := input.Bounds().Min.Y; y < input.Bounds().Max.Y; y++ {
-			for x := input.Bounds().Min.X; x < input.Bounds().Max.X; x++ {
+	if invert {
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
 				r, g, b, a := rgba.At(x, y).RGBA()
 				r = a - r
 				g = a - g
@@ -188,13 +245,29 @@ func main() {
 		}
 	}
 
+	if negativeFilename != "" {
+		writer := getWriterFor(negativeFilename)
+		err = png.Encode(writer, rgba)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// convert the image to grayscale, removing the alpha channel
 
-	gray := image.NewGray(rgba.Bounds())
+	gray := image.NewGray(bounds)
 
-	for y := rgba.Bounds().Min.Y; y < rgba.Bounds().Max.Y; y++ {
-		for x := rgba.Bounds().Min.X; x < rgba.Bounds().Max.X; x++ {
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			gray.Set(x, y, rgba.At(x, y))
+		}
+	}
+
+	if grayFilename != "" {
+		writer := getWriterFor(grayFilename)
+		err = png.Encode(writer, gray)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 
@@ -202,11 +275,11 @@ func main() {
 
 	black := color.Gray{0}
 	white := color.Gray{255}
-	mono := image.NewGray(gray.Bounds())
+	mono := image.NewGray(bounds)
 
-	for y := gray.Bounds().Min.Y; y < gray.Bounds().Max.Y; y++ {
-		for x := gray.Bounds().Min.X; x < gray.Bounds().Max.X; x++ {
-			if uint(gray.GrayAt(x, y).Y) > threshold {
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if uint(gray.GrayAt(x, y).Y) > grayThreshold {
 				mono.SetGray(x, y, white)
 			} else {
 				mono.SetGray(x, y, black)
@@ -214,29 +287,57 @@ func main() {
 		}
 	}
 
-	// save the covnerted image
+	if monoFilename != "" {
+		writer := getWriterFor(monoFilename)
+		err = png.Encode(writer, mono)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
-	// TODO png.Encode(getWriterFor(outputFilename), gray)
-	// TODO png.Encode(getWriterFor(outputFilename), mono)
-
-	// write the debugging svg file
+	// FIXME write the debugging svg file
 
 	rect := mono.Bounds()
 	q := newQuad(mono, &rect)
 
 	svg := q.toSVG(&rect)
-	writer := getWriterFor(outputFilename)
+	writer := getWriterFor(svgFilename)
 	writer.Write([]byte(svg))
 
-	// FIXME test the maximal area thingie
+	// FIXME test the maximal area thingie AND SANVE THE SVG FILE
 
-	for count := 0; ; count++ {
+	animation := &gif.GIF{}
+	gifOptions := gif.Options{NumColors: 2}
 
-		png.Encode(getWriterFor(fmt.Sprintf("_zzz/%s~%03d.png", outputFilename, count)), mono)
+	for {
+
+		// convert the 'mono' image to a single GIF frame
+
+		var byteBuffer bytes.Buffer
+		writer := bufio.NewWriter(&byteBuffer)
+		err = gif.Encode(writer, mono, &gifOptions)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// re-read that single GIF frame back into an Image
+
+		reader := bytes.NewReader(byteBuffer.Bytes())
+		frame, err := gif.Decode(reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// append the GIF frame onto the animation array
+
+		animation.Image = append(animation.Image, frame.(*image.Paletted))
+		animation.Delay = append(animation.Delay, animationDelay)
+
+		// *** png.Encode(getWriterFor(fmt.Sprintf("_zzz/%s~%03d.png", outputFilename, count)), mono)
 
 		area, rect := maximalRectangle(mono)
 
-		fmt.Printf("count: %v, area: %v, rect: %v\n", count, area, rect)
+		// *** fmt.Printf("count: %v, area: %v, rect: %v\n", count, area, rect)
 
 		for y := rect.Bounds().Min.Y; y < rect.Bounds().Max.Y; y++ {
 			for x := rect.Bounds().Min.X; x < rect.Bounds().Max.X; x++ {
