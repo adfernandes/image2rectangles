@@ -13,6 +13,7 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"log"
+	"math"
 	"os"
 	"strings"
 )
@@ -157,7 +158,8 @@ func main() {
 	var grayFilename string
 
 	var monoFilename string
-	var animatedFilename string
+	var animationFilename string
+	var animationFramesPerSecond float64
 	var animationDelay int
 
 	var svgFilename string
@@ -174,10 +176,10 @@ func main() {
 	flag.StringVar(&grayFilename, "grayscale", "", "write the corresponding grayscale PNG file")
 
 	flag.StringVar(&monoFilename, "monochrome", "", "write the corresponding monochrome PNG file")
-	flag.StringVar(&animatedFilename, "animated", "", "write the corresponding animated GIF file")
-	flag.IntVar(&animationDelay, "frame-delay", 10, "delay between animation frames, in 1/100 s")
+	flag.StringVar(&animationFilename, "animation", "", "write the corresponding animated GIF file")
+	flag.Float64Var(&animationFramesPerSecond, "animation-fps", 5.0, "approximate animation frames per sec, 0.1-100")
 
-	flag.StringVar(&svgFilename, "svg", "", "write the corresponding SVG file")
+	flag.StringVar(&svgFilename, "svg", "", "write the corresponding standalone SVG file")
 
 	flag.Parse()
 
@@ -189,9 +191,11 @@ func main() {
 		log.Fatal("the monochrome threshold myst be in [0, 255] inclusive")
 	}
 
-	if animationDelay < 1 {
-		log.Fatal("the animation delay must be positive")
+	if animationFramesPerSecond < 0.1 || animationFramesPerSecond > 100 {
+		log.Fatal("the requested animation FPS is out of range")
 	}
+
+	animationDelay = int(math.Round(100.0 / animationFramesPerSecond))
 
 	inputReader := getDefaultReaderFor(inputFilename)
 	input, format, err := image.Decode(inputReader)
