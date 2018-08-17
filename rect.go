@@ -3,8 +3,6 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"flag"
 	"fmt"
 	"image"
@@ -17,8 +15,6 @@ import (
 	"os"
 	"strings"
 )
-
-const style string = "fill: rgb(255,255,255); stroke: rgb(0,0,0); stroke-width: 0.03125;"
 
 func getDefaultReaderFor(filename string) *os.File {
 
@@ -61,84 +57,78 @@ func getWriterFor(filename string) *os.File {
 
 }
 
-type quad struct {
-	rects [4]image.Rectangle
-	count [4]struct {
-		expected int
-		observed int
-	}
-	quads [4]*quad
+type rect struct {
+	x, y, dx, dy float32
 }
 
-func newQuad(gray *image.Gray, rect *image.Rectangle) *quad {
-
-	min := rect.Min
-	max := rect.Max
-
-	mid := image.Point{(min.X + max.X) / 2, (min.Y + max.Y) / 2}
-
-	q := new(quad)
-
-	q.rects = [4]image.Rectangle{
-		image.Rect(min.X, min.Y, mid.X, mid.Y),
-		image.Rect(mid.X, min.Y, max.X, mid.Y),
-		image.Rect(min.X, mid.Y, mid.X, max.Y),
-		image.Rect(mid.X, mid.Y, max.X, max.Y),
-	}
-
-	for i, rect := range q.rects {
-
-		q.count[i].expected = rect.Dx() * rect.Dy()
-
-		for y := rect.Min.Y; y < rect.Max.Y; y++ {
-			for x := rect.Min.X; x < rect.Max.X; x++ {
-				if gray.GrayAt(x, y).Y > 0 {
-					q.count[i].observed++
-				}
-			}
-		}
-
-	}
-
-	for i, rect := range q.rects {
-		if q.count[i].expected > 1 && q.count[i].observed < q.count[i].expected {
-			q.quads[i] = newQuad(gray, &rect)
-		}
-	}
-
-	return q
+type rectImage struct {
+	bounds rect
+	pixels []rect
 }
 
-func (q *quad) writeSvgRectangles(s *strings.Builder) {
+func newRect(rectangle *image.Rectangle) rect {
+	r := rect{
+		x:  float32(rectangle.Min.X),
+		y:  float32(rectangle.Min.Y),
+		dx: float32(rectangle.Dx()),
+		dy: float32(rectangle.Dy()),
+	}
+	return r
+}
 
-	for i, rect := range q.rects {
+func newRectImage(rectangle *image.Rectangle) rectImage {
+	ri := rectImage{bounds: newRect(rectangle)}
+	return ri
+}
 
-		if q.count[i].expected > 0 {
-			if q.count[i].observed == q.count[i].expected {
-				s.WriteString(fmt.Sprintf("  <rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" style=\"%v\"/>\n", rect.Min.X, rect.Min.Y, rect.Dx(), rect.Dy(), style))
-			}
-		}
+func (ri *rectImage) String() string {
 
+	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf("box %v %v %v %v\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
+	sb.WriteString(fmt.Sprintf("  pixels %v\n", len(ri.pixels)))
+	for _, r := range ri.pixels {
+		sb.WriteString(fmt.Sprintf("    rect %v %v %v %v\n", r.x, r.y, r.dx, r.dy))
 	}
 
-	for _, sq := range q.quads {
-		if sq != nil {
-			sq.writeSvgRectangles(s)
-		}
-	}
+	return sb.String()
 
 }
 
-func (q *quad) toSVG(rect *image.Rectangle) string {
+func (ri *rectImage) toSVG() string {
 
-	var s strings.Builder
+	const strokeWidth float32 = 0.02
+	const offset float32 = strokeWidth / 2.0
 
-	s.WriteString("<?xml version=\"1.0\" standalone=\"no\"?>\n")
-	s.WriteString(fmt.Sprintf("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\">\n", rect.Min.X, rect.Min.Y, rect.Dx(), rect.Dy()))
-	q.writeSvgRectangles(&s)
-	s.WriteString("</svg>\n")
+	// FIXME *** Add a "lightgray" background, and use the "g" element rather than the "style"
 
-	return s.String()
+	var sb strings.Builder
+
+	sb.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
+	sb.WriteString(fmt.Sprintf("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n"))
+
+	sb.WriteString(fmt.Sprintf("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"))
+	sb.WriteString(fmt.Sprintf("     preserveAspectRatio=\"xMidYMid meet\"\n"))
+	sb.WriteString(fmt.Sprintf("     width=\"100%%\" height=\"100%%\"\n"))
+	sb.WriteString(fmt.Sprintf("     viewBox=\"%v %v %v %v\">\n", ri.bounds.x-offset, ri.bounds.y-offset, ri.bounds.dx+offset, ri.bounds.dy+offset))
+
+	sb.WriteString(fmt.Sprintf("     <style type=\"text/css\">\n"))
+	sb.WriteString(fmt.Sprintf("          /* <![CDATA[ */\n"))
+	sb.WriteString(fmt.Sprintf("          rect {\n"))
+	sb.WriteString(fmt.Sprintf("               fill: white;\n"))
+	sb.WriteString(fmt.Sprintf("               stroke: black;\n"))
+	sb.WriteString(fmt.Sprintf("               stroke-width: %v;\n", strokeWidth))
+	sb.WriteString(fmt.Sprintf("          }\n"))
+	sb.WriteString(fmt.Sprintf("          /* ]]> */\n"))
+	sb.WriteString(fmt.Sprintf("     </style>\n"))
+
+	for _, r := range ri.pixels {
+		sb.WriteString(fmt.Sprintf("     <rect x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", r.x, r.y, r.dx, r.dy))
+	}
+
+	sb.WriteString(fmt.Sprintf("</svg>\n"))
+
+	return sb.String()
 
 }
 
@@ -303,53 +293,41 @@ func main() {
 		writer.Close()
 	}
 
-	// FIXME write the debugging svg file
-
-	rect := mono.Bounds()
-	q := newQuad(mono, &rect)
-
-	svg := q.toSVG(&rect)
-	writer := getWriterFor(svgFilename)
-	_, err = writer.Write([]byte(svg))
-	if err != nil {
-		log.Fatal(err)
-	}
-	writer.Close()
-
-	// FIXME test the maximal area thingie AND SANVE THE SVG FILE
+	// decompose the image into maximal rectangles, capturing the image if requested
 
 	animation := &gif.GIF{}
-	gifOptions := gif.Options{NumColors: 2}
+	palette := []color.Color{color.RGBA{0x00, 0x00, 0x00, 0xff}, color.RGBA{0xff, 0xff, 0xff, 0xff}}
+	palettedIndexOfBlack := uint8(0)
+	palettedIndexOfWhite := uint8(1)
+
+	boxen := newRectImage(&bounds)
 
 	for {
 
 		// convert the 'mono' image to a single GIF frame
 
-		var byteBuffer bytes.Buffer
-		writer := bufio.NewWriter(&byteBuffer)
-		err = gif.Encode(writer, mono, &gifOptions)
-		if err != nil {
-			log.Fatal(err)
+		if animationFilename != "" {
+
+			frame := image.NewPaletted(bounds, palette)
+
+			for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+				for x := bounds.Min.X; x < bounds.Max.X; x++ {
+					if mono.GrayAt(x, y).Y == 0 {
+						frame.SetColorIndex(x, y, palettedIndexOfBlack)
+					} else {
+						frame.SetColorIndex(x, y, palettedIndexOfWhite)
+					}
+				}
+			}
+
+			// append the GIF frame onto the animation array
+
+			animation.Image = append(animation.Image, frame)
+			animation.Delay = append(animation.Delay, animationDelay)
+
 		}
-
-		// re-read that single GIF frame back into an Image
-
-		reader := bytes.NewReader(byteBuffer.Bytes())
-		frame, err := gif.Decode(reader)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// append the GIF frame onto the animation array
-
-		animation.Image = append(animation.Image, frame.(*image.Paletted))
-		animation.Delay = append(animation.Delay, animationDelay)
-
-		// *** png.Encode(getWriterFor(fmt.Sprintf("_zzz/%s~%03d.png", outputFilename, count)), mono)
 
 		area, rect := maximalRectangle(mono)
-
-		// *** fmt.Printf("count: %v, area: %v, rect: %v\n", count, area, rect)
 
 		for y := rect.Bounds().Min.Y; y < rect.Bounds().Max.Y; y++ {
 			for x := rect.Bounds().Min.X; x < rect.Bounds().Max.X; x++ {
@@ -361,9 +339,49 @@ func main() {
 			break
 		}
 
+		boxen.pixels = append(boxen.pixels, newRect(&rect))
+
 	}
 
-	// *** START HERE create the animated GIF and write (and close) it
+	if animationFilename != "" {
+
+		writer := getWriterFor(animationFilename)
+		err = gif.EncodeAll(writer, animation)
+		if err != nil {
+			log.Fatal(err)
+		}
+		writer.Close()
+	}
+
+	/*
+		// FIXME write the debugging svg file
+
+		rect := mono.Bounds()
+		q := newQuad(mono, &rect)
+
+		svg := q.toSVG(&rect)
+		writer := getWriterFor(svgFilename)
+		_, err = writer.Write([]byte(svg))
+		if err != nil {
+			log.Fatal(err)
+		}
+		writer.Close()
+	*/
+
+	if svgFilename != "" {
+
+		writer := getWriterFor(svgFilename)
+		_, err = writer.WriteString(boxen.toSVG())
+		if err != nil {
+			log.Fatal(err)
+		}
+		writer.Close()
+
+	}
+
+	// *** FIXME Write to the outputFile
+
+	fmt.Printf("%v", boxen.String())
 
 }
 
@@ -467,7 +485,6 @@ func maximalRectangle(img *image.Gray) (int, image.Rectangle) {
 	}
 
 	if bestArea > 0 {
-		fmt.Printf("image.Rect(%v, %v, %v, %v)\n", bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
 		return bestArea, image.Rect(bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
 	}
 
