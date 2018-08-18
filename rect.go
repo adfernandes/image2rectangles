@@ -97,10 +97,8 @@ func (ri *rectImage) String() string {
 
 func (ri *rectImage) toSVG() string {
 
-	const strokeWidth float32 = 0.02
+	const strokeWidth float32 = 0.03
 	const offset float32 = strokeWidth / 2.0
-
-	// FIXME *** Add a "lightgray" background, and use the "g" element rather than the "style"
 
 	var sb strings.Builder
 
@@ -112,20 +110,16 @@ func (ri *rectImage) toSVG() string {
 	sb.WriteString(fmt.Sprintf("     width=\"100%%\" height=\"100%%\"\n"))
 	sb.WriteString(fmt.Sprintf("     viewBox=\"%v %v %v %v\">\n", ri.bounds.x-offset, ri.bounds.y-offset, ri.bounds.dx+offset, ri.bounds.dy+offset))
 
-	sb.WriteString(fmt.Sprintf("     <style type=\"text/css\">\n"))
-	sb.WriteString(fmt.Sprintf("          /* <![CDATA[ */\n"))
-	sb.WriteString(fmt.Sprintf("          rect {\n"))
-	sb.WriteString(fmt.Sprintf("               fill: white;\n"))
-	sb.WriteString(fmt.Sprintf("               stroke: black;\n"))
-	sb.WriteString(fmt.Sprintf("               stroke-width: %v;\n", strokeWidth))
-	sb.WriteString(fmt.Sprintf("          }\n"))
-	sb.WriteString(fmt.Sprintf("          /* ]]> */\n"))
-	sb.WriteString(fmt.Sprintf("     </style>\n"))
+	sb.WriteString(fmt.Sprintf("    <g fill=\"gray\" stroke=\"none\">\n"))
+	sb.WriteString(fmt.Sprintf("        <rect x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
 
+	sb.WriteString(fmt.Sprintf("        <g fill=\"white\" stroke=\"black\" stroke-width=\"%v\">\n", strokeWidth))
 	for _, r := range ri.pixels {
-		sb.WriteString(fmt.Sprintf("     <rect x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", r.x, r.y, r.dx, r.dy))
+		sb.WriteString(fmt.Sprintf("            <rect x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", r.x, r.y, r.dx, r.dy))
 	}
+	sb.WriteString(fmt.Sprintf("        </g>\n"))
 
+	sb.WriteString(fmt.Sprintf("    </g>\n"))
 	sb.WriteString(fmt.Sprintf("</svg>\n"))
 
 	return sb.String()
