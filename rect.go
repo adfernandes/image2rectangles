@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/gif"
 	_ "image/jpeg"
 	"image/png"
@@ -289,37 +290,14 @@ func main() {
 
 	// decompose the image into maximal rectangles, capturing the image if requested
 
-	animation := &gif.GIF{}
 	palette := []color.Color{color.RGBA{0x00, 0x00, 0x00, 0xff}, color.RGBA{0xff, 0xff, 0xff, 0xff}}
-	palettedIndexOfBlack := uint8(0)
-	palettedIndexOfWhite := uint8(1)
+	animation := &gif.GIF{}
+	animation.Image = append(animation.Image, image.NewPaletted(bounds, palette))
+	animation.Delay = append(animation.Delay, animationDelay)
 
 	boxen := newRectImage(&bounds)
 
 	for {
-
-		// convert the 'mono' image to a single GIF frame
-
-		if animationFilename != "" {
-
-			frame := image.NewPaletted(bounds, palette)
-
-			for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-				for x := bounds.Min.X; x < bounds.Max.X; x++ {
-					if mono.GrayAt(x, y).Y == 0 {
-						frame.SetColorIndex(x, y, palettedIndexOfBlack)
-					} else {
-						frame.SetColorIndex(x, y, palettedIndexOfWhite)
-					}
-				}
-			}
-
-			// append the GIF frame onto the animation array
-
-			animation.Image = append(animation.Image, frame)
-			animation.Delay = append(animation.Delay, animationDelay)
-
-		}
 
 		area, rect := maximalRectangle(mono)
 
@@ -335,6 +313,27 @@ func main() {
 
 		boxen.pixels = append(boxen.pixels, newRect(&rect))
 
+		if animationFilename != "" {
+
+			// convert the 'mono' image to a single GIF frame
+
+			frame := image.NewPaletted(bounds, palette)
+
+			draw.Draw(frame, bounds, animation.Image[len(animation.Image)-1], image.ZP, draw.Src)
+
+			for y := rect.Bounds().Min.Y; y < rect.Bounds().Max.Y; y++ {
+				for x := rect.Bounds().Min.X; x < rect.Bounds().Max.X; x++ {
+					frame.SetColorIndex(x, y, 1)
+				}
+			}
+
+			// append the GIF frame onto the animation array
+
+			animation.Image = append(animation.Image, frame)
+			animation.Delay = append(animation.Delay, animationDelay)
+
+		}
+
 	}
 
 	if animationFilename != "" {
@@ -346,21 +345,6 @@ func main() {
 		}
 		writer.Close()
 	}
-
-	/*
-		// FIXME write the debugging svg file
-
-		rect := mono.Bounds()
-		q := newQuad(mono, &rect)
-
-		svg := q.toSVG(&rect)
-		writer := getWriterFor(svgFilename)
-		_, err = writer.Write([]byte(svg))
-		if err != nil {
-			log.Fatal(err)
-		}
-		writer.Close()
-	*/
 
 	if svgFilename != "" {
 
@@ -482,6 +466,6 @@ func maximalRectangle(img *image.Gray) (int, image.Rectangle) {
 		return bestArea, image.Rect(bestLl.two+1, bestUr.one+1, bestUr.two, bestLl.one)
 	}
 
-	return 0, image.Rect(0, 0, 0, 0)
+	return 0, image.ZR
 
 }
