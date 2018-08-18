@@ -196,7 +196,10 @@ func main() {
 	// we will assume that 'white' is the color that we want drawn
 
 	bounds := input.Bounds()
-	fmt.Printf("read '%v' as a '%v' image with '%T' and bounds '%v'\n", inputFilename, format, input.ColorModel().Convert(color.RGBA{}), bounds)
+
+	if false {
+		fmt.Printf("read '%v' as a '%v' image with '%T' and bounds '%v'\n", inputFilename, format, input.ColorModel().Convert(color.RGBA{}), bounds)
+	}
 
 	if bounds.Dx() < 2 || bounds.Dy() < 2 {
 		log.Fatal("the input image must be greater than 2 pixels wide and high")
