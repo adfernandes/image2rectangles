@@ -149,6 +149,8 @@ func main() {
 
 	var svgFilename string
 
+	var report bool
+
 	flag.StringVar(&inputFilename, "input", "", "the input PNG, GIF, or JPEG file, default is stdin")
 	flag.StringVar(&outputFilename, "output", "", "the output rectangle-data filename, default is stdout")
 
@@ -165,6 +167,8 @@ func main() {
 	flag.Float64Var(&animationFramesPerSecond, "animation-fps", 5.0, "approximate animation frames per sec, 0.1-100")
 
 	flag.StringVar(&svgFilename, "svg", "", "write the corresponding standalone SVG file")
+
+	flag.BoolVar(&report, "report", false, "report the pixel compression ratio to stderr")
 
 	flag.Parse()
 
@@ -295,6 +299,7 @@ func main() {
 	animation.Image = append(animation.Image, image.NewPaletted(bounds, palette))
 	animation.Delay = append(animation.Delay, animationDelay)
 
+	var pixels int
 	boxen := newRectImage(&bounds)
 
 	for {
@@ -312,6 +317,7 @@ func main() {
 		}
 
 		boxen.pixels = append(boxen.pixels, newRect(&rect))
+		pixels += rect.Dx() * rect.Dy()
 
 		if animationFilename != "" {
 
@@ -360,6 +366,12 @@ func main() {
 	// *** FIXME Write to the outputFile
 
 	fmt.Printf("%v", boxen.String())
+
+	// report the compression ratio, if requested
+
+	if report {
+		fmt.Fprintf(os.Stderr, "pixels: { in: %v, out: %v }\n", pixels, len(boxen.pixels))
+	}
 
 }
 

@@ -3,7 +3,7 @@
 prg=rect
 
 test: clean _rect
-	./_rect < x.png -svg _x.svg -invert -negative _x~neg.png -animation _x~anim.gif
+	./_rect < x.png -svg _x.svg -invert -negative _x~neg.png -animation _x~anim.gif -report
 
 clean:
 	rm -rfv _*
