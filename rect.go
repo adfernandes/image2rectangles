@@ -82,6 +82,17 @@ func newRectImage(rectangle *image.Rectangle) rectImage {
 	return ri
 }
 
+func (ri *rectImage) Center() {
+	ox := ri.bounds.x + 0.5*ri.bounds.dx
+	oy := ri.bounds.y + 0.5*ri.bounds.dy
+	ri.bounds.x -= ox
+	ri.bounds.y -= oy
+	for i := range ri.pixels {
+		ri.pixels[i].x -= ox
+		ri.pixels[i].y -= oy
+	}
+}
+
 func (ri *rectImage) String() string {
 
 	var sb strings.Builder
@@ -107,8 +118,8 @@ func (ri *rectImage) toSVG() string {
 	sb.WriteString(fmt.Sprintf("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n"))
 
 	sb.WriteString(fmt.Sprintf("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"))
-	sb.WriteString(fmt.Sprintf("     preserveAspectRatio=\"xMidYMid meet\"\n"))
 	sb.WriteString(fmt.Sprintf("     width=\"100%%\" height=\"100%%\"\n"))
+	sb.WriteString(fmt.Sprintf("     preserveAspectRatio=\"xMidYMid meet\"\n"))
 	sb.WriteString(fmt.Sprintf("     viewBox=\"%v %v %v %v\">\n", ri.bounds.x-offset, ri.bounds.y-offset, ri.bounds.dx+offset, ri.bounds.dy+offset))
 
 	sb.WriteString(fmt.Sprintf("    <g fill=\"gray\" stroke=\"none\">\n"))
@@ -133,6 +144,7 @@ func main() {
 
 	var inputFilename string
 	var outputFilename string
+	var centerOutput bool
 
 	var colorFilename string
 
@@ -153,6 +165,7 @@ func main() {
 
 	flag.StringVar(&inputFilename, "input", "", "the input PNG, GIF, or JPEG file, default is stdin")
 	flag.StringVar(&outputFilename, "output", "", "the output rectangle-data filename, default is stdout")
+	flag.BoolVar(&centerOutput, "center", true, "center the output on zero")
 
 	flag.StringVar(&colorFilename, "verify", "", "write a verification RGBA color PNG file")
 
@@ -355,6 +368,10 @@ func main() {
 		writer.Close()
 	}
 
+	if centerOutput {
+		boxen.Center()
+	}
+
 	if svgFilename != "" {
 
 		writer := getWriterFor(svgFilename)
@@ -366,9 +383,9 @@ func main() {
 
 	}
 
-	// *** FIXME Write to the outputFile
-
-	fmt.Printf("%v", boxen.String())
+	writer := getDefaultWriterFor(outputFilename)
+	writer.Write([]byte(boxen.String()))
+	writer.Close()
 
 	// report the compression ratio, if requested
 
