@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
 	"image/gif"
 	_ "image/jpeg"
 	"image/png"
@@ -155,7 +154,9 @@ func main() {
 	var grayFilename string
 
 	var monoFilename string
-	var animationFilename string
+	var animationBuildFilename string
+	var animationPixelsFilename string
+	var animationRequested bool
 	var animationFramesPerSecond float64
 	var animationDelay int
 
@@ -176,7 +177,8 @@ func main() {
 	flag.StringVar(&grayFilename, "grayscale", "", "write the corresponding grayscale PNG file")
 
 	flag.StringVar(&monoFilename, "monochrome", "", "write the corresponding monochrome PNG file")
-	flag.StringVar(&animationFilename, "animation", "", "write the corresponding animated GIF file")
+	flag.StringVar(&animationBuildFilename, "animation-build", "", "write the corresponding animated-build GIF file")
+	flag.StringVar(&animationPixelsFilename, "animation-pixels", "", "write the corresponding animated-pixels GIF file")
 	flag.Float64Var(&animationFramesPerSecond, "animation-fps", 5.0, "approximate animation frames per sec, 0.1-100")
 
 	flag.StringVar(&svgFilename, "svg", "", "write the corresponding standalone SVG file")
@@ -191,6 +193,10 @@ func main() {
 
 	if grayThreshold < 0 || grayThreshold > 255 {
 		log.Fatal("the monochrome threshold myst be in [0, 255] inclusive")
+	}
+
+	if animationBuildFilename != "" || animationPixelsFilename != "" {
+		animationRequested = true
 	}
 
 	if animationFramesPerSecond < 0.1 || animationFramesPerSecond > 100 {
@@ -310,10 +316,21 @@ func main() {
 
 	// decompose the image into maximal rectangles, capturing the image if requested
 
-	palette := []color.Color{color.RGBA{0x00, 0x00, 0x00, 0xff}, color.RGBA{0xff, 0xff, 0xff, 0xff}}
 	animation := &gif.GIF{}
-	animation.Image = append(animation.Image, image.NewPaletted(bounds, palette))
-	animation.Delay = append(animation.Delay, animationDelay)
+
+	palette := []color.Color{color.Transparent, color.White}
+
+	const gifDisposalUnspecified = 0
+	const gifDisposalDoNotDispose = 1
+	const gifDisposalRestoreToBackgroundColor = 2
+	const gifDisposalRestoreToPrevious = 3
+
+	if animationRequested {
+
+		animation.Image = append(animation.Image, image.NewPaletted(bounds, palette))
+		animation.Delay = append(animation.Delay, animationDelay)
+		animation.Disposal = append(animation.Disposal, gifDisposalUnspecified)
+	}
 
 	var pixels int
 	boxen := newRectImage(&bounds)
@@ -335,13 +352,11 @@ func main() {
 		boxen.pixels = append(boxen.pixels, newRect(&rect))
 		pixels += rect.Dx() * rect.Dy()
 
-		if animationFilename != "" {
+		if animationRequested {
 
 			// convert the 'mono' image to a single GIF frame
 
 			frame := image.NewPaletted(bounds, palette)
-
-			draw.Draw(frame, bounds, animation.Image[len(animation.Image)-1], image.ZP, draw.Src)
 
 			for y := rect.Bounds().Min.Y; y < rect.Bounds().Max.Y; y++ {
 				for x := rect.Bounds().Min.X; x < rect.Bounds().Max.X; x++ {
@@ -353,14 +368,33 @@ func main() {
 
 			animation.Image = append(animation.Image, frame)
 			animation.Delay = append(animation.Delay, animationDelay)
+			animation.Disposal = append(animation.Disposal, gifDisposalUnspecified)
 
 		}
 
 	}
 
-	if animationFilename != "" {
+	if animationBuildFilename != "" {
 
-		writer := getWriterFor(animationFilename)
+		for i := range animation.Delay {
+			animation.Disposal[i] = gifDisposalDoNotDispose
+		}
+
+		writer := getWriterFor(animationBuildFilename)
+		err = gif.EncodeAll(writer, animation)
+		if err != nil {
+			log.Fatal(err)
+		}
+		writer.Close()
+	}
+
+	if animationPixelsFilename != "" {
+
+		for i := range animation.Delay {
+			animation.Disposal[i] = gifDisposalRestoreToBackgroundColor
+		}
+
+		writer := getWriterFor(animationPixelsFilename)
 		err = gif.EncodeAll(writer, animation)
 		if err != nil {
 			log.Fatal(err)
