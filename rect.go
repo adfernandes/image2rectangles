@@ -179,7 +179,7 @@ func main() {
 	flag.StringVar(&monoFilename, "monochrome", "", "write the corresponding monochrome PNG file")
 	flag.StringVar(&animationBuildFilename, "animation-build", "", "write the corresponding animated-build GIF file")
 	flag.StringVar(&animationPixelsFilename, "animation-pixels", "", "write the corresponding animated-pixels GIF file")
-	flag.Float64Var(&animationFramesPerSecond, "animation-fps", 5.0, "approximate animation frames per sec, 0.1-100")
+	flag.Float64Var(&animationFramesPerSecond, "animation-fps", 15.0, "approximate animation frames per sec, 0.1-100")
 
 	flag.StringVar(&svgFilename, "svg", "", "write the corresponding standalone SVG file")
 
