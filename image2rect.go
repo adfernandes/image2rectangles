@@ -96,10 +96,10 @@ func (ri *rectImage) String() string {
 
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("box %v %v %v %v\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
+	sb.WriteString(fmt.Sprintf("bounds %v %v %v %v\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
 	sb.WriteString(fmt.Sprintf("  pixels %v\n", len(ri.pixels)))
 	for _, r := range ri.pixels {
-		sb.WriteString(fmt.Sprintf("    rect %v %v %v %v\n", r.x, r.y, r.dx, r.dy))
+		sb.WriteString(fmt.Sprintf("    rectangle %v %v %v %v\n", r.x, r.y, r.dx, r.dy))
 	}
 
 	return sb.String()
@@ -121,11 +121,11 @@ func (ri *rectImage) toSVG() string {
 	sb.WriteString(fmt.Sprintf("     viewBox=\"%v %v %v %v\">\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
 
 	sb.WriteString(fmt.Sprintf("    <g fill=\"gray\" stroke=\"none\">\n"))
-	sb.WriteString(fmt.Sprintf("        <rect x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
+	sb.WriteString(fmt.Sprintf("        <rect class=\"bounds\" x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
 
 	sb.WriteString(fmt.Sprintf("        <g fill=\"white\" stroke=\"black\" stroke-width=\"%v\">\n", strokeWidth))
 	for _, r := range ri.pixels {
-		sb.WriteString(fmt.Sprintf("            <rect x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", r.x, r.y, r.dx, r.dy))
+		sb.WriteString(fmt.Sprintf("            <rect class=\"pixel\" x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", r.x, r.y, r.dx, r.dy))
 	}
 	sb.WriteString(fmt.Sprintf("        </g>\n"))
 

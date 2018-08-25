@@ -27,6 +27,8 @@ exe="_bin/${os}/${OS[${GOOS}]}"
 
 mkdir -p "_test"
 
+echo "size seconds" > "_test/timing.data"
+
 for size in 100 200 400 800 ; do
 
 	(time "${exe}" \
@@ -35,6 +37,23 @@ for size in 100 200 400 800 ; do
         -animation-build "_test/${size}.gif" \
         -svg "_test/${size}.svg" \
         -report \
-    ) 1> "_test/${size}.rect" 2> "_test/${size}.log"
+    ) 1> "_test/${size}.rect" 2>  "_test/${size}.log"
+
+    sed -i '' -e '/^\s*$/d' "_test/${size}.log"
+
+    echo -ne "${size} " >> "_test/timing.data"
+    perl -ne 'if (m/^real\s+([.0-9]+)m([.0-9]+)s/i) { print 60 * $1 + $2, "\n"; }' < "_test/${size}.log" >> "_test/timing.data"
 
 done
+
+gnuplot << _EOD_
+set term svg
+set output '_test/timing.svg'
+set key autotitle columnhead
+set logscale y
+set nokey
+set xrange [10:1000]
+set xlabel "image size / pixels"
+set ylabel "run time / seconds"
+plot '_test/timing.data' with points, '_test/timing.data' smooth cspline
+_EOD_
