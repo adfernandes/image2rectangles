@@ -454,8 +454,8 @@ func main() {
 //
 func maximalRectangle(img *image.Gray) (int, image.Rectangle) {
 
-	M := img.Bounds().Max.X // length of a row
-	N := img.Bounds().Max.Y // number of rows
+	M := img.Bounds().Max.Y // length of a row
+	N := img.Bounds().Max.X // number of rows
 
 	type Pair struct {
 		one int
