@@ -109,7 +109,6 @@ func (ri *rectImage) String() string {
 func (ri *rectImage) toSVG() string {
 
 	const strokeWidth float32 = 0.03
-	const offset float32 = strokeWidth / 2.0
 
 	var sb strings.Builder
 
@@ -119,7 +118,7 @@ func (ri *rectImage) toSVG() string {
 	sb.WriteString(fmt.Sprintf("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"))
 	sb.WriteString(fmt.Sprintf("     width=\"100%%\" height=\"100%%\"\n"))
 	sb.WriteString(fmt.Sprintf("     preserveAspectRatio=\"xMidYMid meet\"\n"))
-	sb.WriteString(fmt.Sprintf("     viewBox=\"%v %v %v %v\">\n", ri.bounds.x-offset, ri.bounds.y-offset, ri.bounds.dx+offset, ri.bounds.dy+offset))
+	sb.WriteString(fmt.Sprintf("     viewBox=\"%v %v %v %v\">\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
 
 	sb.WriteString(fmt.Sprintf("    <g fill=\"gray\" stroke=\"none\">\n"))
 	sb.WriteString(fmt.Sprintf("        <rect x=\"%v\" y=\"%v\" width=\"%v\" height=\"%v\"/>\n", ri.bounds.x, ri.bounds.y, ri.bounds.dx, ri.bounds.dy))
@@ -173,7 +172,7 @@ func main() {
 	flag.BoolVar(&invert, "invert", false, "invert the image colors prior to grayscaling")
 	flag.StringVar(&negativeFilename, "negative", "", "write the corresponding negative RGBA PNG file")
 
-	flag.UintVar(&grayThreshold, "threshold", 127, "monochrome gray threshold, post negation, 0-255")
+	flag.UintVar(&grayThreshold, "threshold", 127, "post-negation gray threshold, 0-255")
 	flag.StringVar(&grayFilename, "grayscale", "", "write the corresponding grayscale PNG file")
 
 	flag.StringVar(&monoFilename, "monochrome", "", "write the corresponding monochrome PNG file")
@@ -192,7 +191,7 @@ func main() {
 	}
 
 	if grayThreshold < 0 || grayThreshold > 255 {
-		log.Fatal("the monochrome threshold myst be in [0, 255] inclusive")
+		log.Fatal("the monochrome threshold must in the range [0, 255] inclusive")
 	}
 
 	if animationBuildFilename != "" || animationPixelsFilename != "" {
@@ -297,7 +296,7 @@ func main() {
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			if uint(gray.GrayAt(x, y).Y) > grayThreshold {
+			if uint(gray.GrayAt(x, y).Y) > uint(grayThreshold) {
 				mono.SetGray(x, y, white)
 			} else {
 				mono.SetGray(x, y, black)
@@ -346,7 +345,25 @@ func main() {
 		}
 
 		if area <= 0 {
+
+			// verify that there are no leftover pixels
+
+			leftover := 0
+
+			for y := rect.Bounds().Min.Y; y < rect.Bounds().Max.Y; y++ {
+				for x := rect.Bounds().Min.X; x < rect.Bounds().Max.X; x++ {
+					if mono.GrayAt(x, y).Y != 0 {
+						leftover++
+					}
+				}
+			}
+
+			if leftover != 0 {
+				log.Fatal(fmt.Sprintf("somehow there were %v leftover pixels\n", leftover))
+			}
+
 			break
+
 		}
 
 		boxen.pixels = append(boxen.pixels, newRect(&rect))
@@ -424,7 +441,8 @@ func main() {
 	// report the compression ratio, if requested
 
 	if report {
-		fmt.Fprintf(os.Stderr, "pixels: { in: %v, out: %v }\n", pixels, len(boxen.pixels))
+		ratio := float64(len(boxen.pixels)) / float64(pixels)
+		fmt.Fprintf(os.Stderr, "pixels: { in: %v, out: %v, ratio: %f, threshold: %v }\n", pixels, len(boxen.pixels), ratio, grayThreshold)
 	}
 
 }

@@ -1,0 +1,40 @@
+#!/opt/local/bin/bash
+
+set -exu -o pipefail
+
+rm -rf _*
+
+basedir="$(python -c "import os ; print(os.path.dirname(os.path.realpath(\"${BASH_SOURCE[0]}\")))")" # because 'readlink -e' does not exist on darwin
+
+cd "${basedir}"
+
+name="image2rect"
+
+declare -A OS # requires bash4, on darwin use macports or homebrew
+OS=( [linux]="${name}" [darwin]="${name}" [windows]="${name}.exe" )
+
+for GOOS in "${!OS[@]}" ; do
+
+    mkdir -p "_bin/${GOOS}"
+    GOPATH="$(pwd)" GOOS="${GOOS}" GOARCH="amd64" go build "${name}.go"
+    mv "${OS[${GOOS}]}" "_bin/${GOOS}"
+
+done
+
+os="$(uname | tr '[A-Z]' '[a-z]')"
+
+exe="_bin/${os}/${OS[${GOOS}]}"
+
+mkdir -p "_test"
+
+for size in 100 200 400 800 ; do
+
+	(time "${exe}" \
+        -input "oshw/oshw-logo-${size}-px.png" \
+        -threshold 63 -monochrome "_test/${size}.png" \
+        -animation-build "_test/${size}.gif" \
+        -svg "_test/${size}.svg" \
+        -report \
+    ) 1> "_test/${size}.rect" 2> "_test/${size}.log"
+
+done
