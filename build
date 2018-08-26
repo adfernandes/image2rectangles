@@ -25,35 +25,62 @@ os="$(uname | tr '[A-Z]' '[a-z]')"
 
 exe="_bin/${os}/${OS[${GOOS}]}"
 
-mkdir -p "_test"
+mkdir -p "_test/oshw"
 
-echo "size seconds" > "_test/timing.data"
+echo "size seconds" > "_test/oshw/timing.data"
 
 for size in 100 200 400 800 ; do
 
+    out="_test/oshw/${size}"
+
 	(time "${exe}" \
-        -input "oshw/oshw-logo-${size}-px.png" \
-        -threshold 63 -monochrome "_test/${size}.png" \
-        -animation-build "_test/${size}.gif" \
-        -svg "_test/${size}.svg" \
+        -input "test/oshw/oshw-logo-${size}-px.png" \
+        -threshold 63 -monochrome "${out}.png" \
+        -animation-build "${out}.gif" \
+        -svg "${out}.svg" \
         -report \
-    ) 1> "_test/${size}.rect" 2>  "_test/${size}.log"
+    ) 1> "${out}.rect" 2>  "${out}.log"
 
-    sed -i '' -e '/^\s*$/d' "_test/${size}.log"
+    sed -i '' -e '/^\s*$/d' "${out}.log"
 
-    echo -ne "${size} " >> "_test/timing.data"
-    perl -ne 'if (m/^real\s+([.0-9]+)m([.0-9]+)s/i) { print 60 * $1 + $2, "\n"; }' < "_test/${size}.log" >> "_test/timing.data"
+    echo -ne "${size} " >> "_test/oshw/timing.data"
+    perl -ne 'if (m/^real\s+([.0-9]+)m([.0-9]+)s/i) { print 60 * $1 + $2, "\n"; }' < "${out}.log" >> "_test/oshw/timing.data"
 
 done
 
 gnuplot << _EOD_
 set term svg
-set output '_test/timing.svg'
+set output '_test/oshw/timing.svg'
 set key autotitle columnhead
 set logscale y
 set nokey
 set xrange [10:1000]
 set xlabel "image size / pixels"
 set ylabel "run time / seconds"
-plot '_test/timing.data' with points, '_test/timing.data' smooth cspline
+plot '_test/oshw/timing.data' with points, '_test/oshw/timing.data' smooth cspline
 _EOD_
+
+for dir in misc color ; do
+    mkdir -p "_test/${dir}"
+    for file in "test/${dir}"/* ; do
+
+        out="$(basename "${file}")"
+        out="$(basename "${out}" .png)"
+        out="$(basename "${out}" .jpg)"
+        out="_test/${dir}/${out}"
+
+        (time "${exe}" \
+            -input "${file}" \
+            -verify "${out}.png" \
+            -invert -negative "${out}~neg.png" \
+            -threshold 63 -monochrome "${out}~baw.png" \
+            -animation-pixels "${out}~pix.gif" \
+            -animation-build "${out}~bld.gif" \
+            -svg "${out}.svg" \
+            -report \
+        ) 1> "${out}.rect" 2>  "${out}.log"
+
+        sed -i '' -e '/^\s*$/d' "${out}.log"
+
+    done
+done
