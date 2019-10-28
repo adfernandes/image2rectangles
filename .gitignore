@@ -12,6 +12,9 @@ _*
 .classpath
 .project
 
+!_bin/
+!_test/
+
 # Created by https://www.gitignore.io/api/windows,linux,osx
 
 ### Linux ###
@@ -35,7 +38,8 @@ _*
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon[
+]*
 
 # Thumbnails
 ._*

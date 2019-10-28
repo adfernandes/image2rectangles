@@ -1,0 +1,5 @@
++ _bin/darwin/image2rect -input test/oshw/oshw-logo-800-px.png -threshold 63 -monochrome _test/oshw/800.png -animation-build _test/oshw/800.gif -svg _test/oshw/800.svg -report
+pixels: { in: 198289, out: 2400, ratio: 0.012104, threshold: 63 }
+real	0m13.567s
+user	0m12.557s
+sys	0m0.842s

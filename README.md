@@ -1,8 +1,8 @@
 # TODO
 
-Merge the `Makefile` and the `build` script...
+Make the '_test' and '_bin' directories part of the git repo...
 
-Make the '_test' and '_bin' directories part of the git repo... (Or really, learn to do a proper release...)
+Link to the "timing" graph(s)...
 
 Example:
 

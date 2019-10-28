@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+     width="100%" height="100%"
+     preserveAspectRatio="xMidYMid meet"
+     viewBox="-32.5 -32.5 65 65">
+    <g fill="gray" stroke="none">
+        <rect class="bounds" x="-32.5" y="-32.5" width="65" height="65"/>
+        <g fill="white" stroke="black" stroke-width="0.03">
+            <rect class="pixel" x="-26.5" y="-17.5" width="10" height="31"/>
+            <rect class="pixel" x="11.5" y="-17.5" width="10" height="30"/>
+            <rect class="pixel" x="-17.5" y="14.5" width="30" height="8"/>
+            <rect class="pixel" x="-17.5" y="-27.5" width="29" height="8"/>
+            <rect class="pixel" x="-10.5" y="22.5" width="16" height="3"/>
+            <rect class="pixel" x="-29.5" y="-9.5" width="3" height="15"/>
+            <rect class="pixel" x="-9.5" y="-30.5" width="14" height="3"/>
+            <rect class="pixel" x="21.5" y="-12.5" width="2" height="20"/>
+            <rect class="pixel" x="-25.5" y="-19.5" width="16" height="2"/>
+            <rect class="pixel" x="3.5" y="-19.5" width="16" height="2"/>
+            <rect class="pixel" x="4.5" y="12.5" width="16" height="2"/>
+            <rect class="pixel" x="-22.5" y="13.5" width="5" height="5"/>
+            <rect class="pixel" x="-22.5" y="-23.5" width="5" height="4"/>
+            <rect class="pixel" x="11.5" y="-24.5" width="4" height="5"/>
+            <rect class="pixel" x="12.5" y="14.5" width="4" height="5"/>
+            <rect class="pixel" x="-16.5" y="8.5" width="3" height="6"/>
+            <rect class="pixel" x="8.5" y="-17.5" width="3" height="5"/>
+            <rect class="pixel" x="9.5" y="5.5" width="2" height="7"/>
+            <rect class="pixel" x="-16.5" y="-17.5" width="2" height="6"/>
+            <rect class="pixel" x="23.5" y="-7.5" width="1" height="11"/>
+            <rect class="pixel" x="-28.5" y="-13.5" width="2" height="4"/>
+            <rect class="pixel" x="-13.5" y="12.5" width="4" height="2"/>
+            <rect class="pixel" x="-28.5" y="5.5" width="2" height="3"/>
+            <rect class="pixel" x="-24.5" y="13.5" width="2" height="3"/>
+            <rect class="pixel" x="-20.5" y="18.5" width="3" height="2"/>
+            <rect class="pixel" x="-14.5" y="-17.5" width="2" height="3"/>
+            <rect class="pixel" x="-13.5" y="22.5" width="3" height="2"/>
+            <rect class="pixel" x="-15.5" y="-28.5" width="6" height="1"/>
+            <rect class="pixel" x="4.5" y="-29.5" width="3" height="2"/>
+            <rect class="pixel" x="5.5" y="22.5" width="3" height="2"/>
+            <rect class="pixel" x="6.5" y="10.5" width="3" height="2"/>
+            <rect class="pixel" x="10.5" y="-12.5" width="1" height="6"/>
+            <rect class="pixel" x="15.5" y="-22.5" width="2" height="3"/>
+            <rect class="pixel" x="16.5" y="14.5" width="2" height="3"/>
+            <rect class="pixel" x="-16.5" y="3.5" width="1" height="5"/>
+            <rect class="pixel" x="-21.5" y="-24.5" width="4" height="1"/>
+            <rect class="pixel" x="6.5" y="-17.5" width="2" height="2"/>
+            <rect class="pixel" x="10.5" y="1.5" width="1" height="4"/>
+            <rect class="pixel" x="11.5" y="-26.5" width="2" height="2"/>
+            <rect class="pixel" x="-27.5" y="8.5" width="1" height="3"/>
+            <rect class="pixel" x="-23.5" y="-22.5" width="1" height="3"/>
+            <rect class="pixel" x="-16.5" y="-11.5" width="1" height="3"/>
+            <rect class="pixel" x="-12.5" y="-29.5" width="3" height="1"/>
+            <rect class="pixel" x="-9.5" y="-19.5" width="3" height="1"/>
+            <rect class="pixel" x="12.5" y="19.5" width="3" height="1"/>
+            <rect class="pixel" x="21.5" y="-15.5" width="1" height="3"/>
+            <rect class="pixel" x="21.5" y="7.5" width="1" height="3"/>
+            <rect class="pixel" x="-27.5" y="-15.5" width="1" height="2"/>
+            <rect class="pixel" x="-19.5" y="-25.5" width="2" height="1"/>
+            <rect class="pixel" x="-19.5" y="20.5" width="2" height="1"/>
+            <rect class="pixel" x="-15.5" y="6.5" width="1" height="2"/>
+            <rect class="pixel" x="-15.5" y="22.5" width="2" height="1"/>
+            <rect class="pixel" x="-13.5" y="10.5" width="1" height="2"/>
+            <rect class="pixel" x="-12.5" y="-17.5" width="1" height="2"/>
+            <rect class="pixel" x="-9.5" y="13.5" width="2" height="1"/>
+            <rect class="pixel" x="1.5" y="-19.5" width="2" height="1"/>
+            <rect class="pixel" x="2.5" y="13.5" width="2" height="1"/>
+            <rect class="pixel" x="7.5" y="-28.5" width="2" height="1"/>
+            <rect class="pixel" x="7.5" y="9.5" width="2" height="1"/>
+            <rect class="pixel" x="9.5" y="-12.5" width="1" height="2"/>
+            <rect class="pixel" x="8.5" y="22.5" width="2" height="1"/>
+            <rect class="pixel" x="17.5" y="-21.5" width="1" height="2"/>
+            <rect class="pixel" x="-25.5" y="13.5" width="1" height="1"/>
+            <rect class="pixel" x="-24.5" y="-20.5" width="1" height="1"/>
+            <rect class="pixel" x="-23.5" y="16.5" width="1" height="1"/>
+            <rect class="pixel" x="-21.5" y="18.5" width="1" height="1"/>
+            <rect class="pixel" x="-18.5" y="-26.5" width="1" height="1"/>
+            <rect class="pixel" x="-17.5" y="13.5" width="1" height="1"/>
+            <rect class="pixel" x="-14.5" y="-14.5" width="1" height="1"/>
+            <rect class="pixel" x="-12.5" y="11.5" width="1" height="1"/>
+            <rect class="pixel" x="-11.5" y="-17.5" width="1" height="1"/>
+            <rect class="pixel" x="5.5" y="-17.5" width="1" height="1"/>
+            <rect class="pixel" x="5.5" y="11.5" width="1" height="1"/>
+            <rect class="pixel" x="7.5" y="-15.5" width="1" height="1"/>
+            <rect class="pixel" x="8.5" y="8.5" width="1" height="1"/>
+            <rect class="pixel" x="12.5" y="20.5" width="1" height="1"/>
+            <rect class="pixel" x="13.5" y="-25.5" width="1" height="1"/>
+            <rect class="pixel" x="15.5" y="-23.5" width="1" height="1"/>
+            <rect class="pixel" x="16.5" y="17.5" width="1" height="1"/>
+            <rect class="pixel" x="18.5" y="-20.5" width="1" height="1"/>
+            <rect class="pixel" x="18.5" y="14.5" width="1" height="1"/>
+            <rect class="pixel" x="19.5" y="-18.5" width="1" height="1"/>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,5 @@
++ _bin/darwin/image2rect -input test/misc/tux.png -verify _test/misc/tux.png -invert -negative _test/misc/tux~neg.png -threshold 63 -monochrome _test/misc/tux~baw.png -animation-pixels _test/misc/tux~pix.gif -animation-build _test/misc/tux~bld.gif -svg _test/misc/tux.svg -report
+pixels: { in: 73888, out: 2212, ratio: 0.029937, threshold: 63 }
+real	0m9.416s
+user	0m8.600s
+sys	0m0.505s

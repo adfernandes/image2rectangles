@@ -1,0 +1,5 @@
++ _bin/darwin/image2rect -input test/misc/o.png -verify _test/misc/o.png -invert -negative _test/misc/o~neg.png -threshold 63 -monochrome _test/misc/o~baw.png -animation-pixels _test/misc/o~pix.gif -animation-build _test/misc/o~bld.gif -svg _test/misc/o.svg -report
+pixels: { in: 1691, out: 82, ratio: 0.048492, threshold: 63 }
+real	0m0.019s
+user	0m0.012s
+sys	0m0.007s
